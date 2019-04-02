@@ -1,0 +1,11 @@
+name = "MomentExpansions"
+uuid = "57890500-5543-11e9-15d8-8ddd60fdedf8"
+authors = ["Jeremy Revell"]
+version = "0.1.0"
+
+[deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+DiffEqBiological = "eb300fae-53e8-50a0-950c-e21f52c2b7e0"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
