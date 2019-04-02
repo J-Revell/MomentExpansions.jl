@@ -1,7 +1,9 @@
+__precompile__()
+
 module MomentExpansions
 
 	using DataStructures
-	using SymPy
+	import SymPy
 
 	using Reexport
 	@reexport using DiffEqBase
@@ -45,8 +47,8 @@ module MomentExpansions
 	end
 
 	### avoid confusion between diffeqbase and sympy ###
-	solve(args...; kwargs...) = DiffEqBase.solve(args...; kwargs...)
+	#solve(args...; kwargs...) = DiffEqBase.solve(args...; kwargs...)
 
-	export MomentExpansion, MomentStruct, ODEProblem, solve
+	export MomentExpansion, MomentStruct, ODEProblem#, solve
 
 end # module

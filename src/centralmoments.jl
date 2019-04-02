@@ -55,5 +55,5 @@ function dcen_dt(network::DiffEqBase.AbstractReactionNetwork, momentstruct::Mome
 			end
 		end
 	end
-	simplify.(dcen)
+	SymPy.simplify.(dcen)
 end
