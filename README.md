@@ -4,7 +4,7 @@
 
 MomentExpansions.jl is an add-on package to DiffEqBiological.jl.
 
-The package facilitates the generation and simulation of ODE moment expansions of chemical reaction networks.
+The package facilitates the generation and simulation of ODE moment expansions of chemical reaction networks. For further information, see the following paper: [Ale et al, 2013](https://aip.scitation.org/doi/10.1063/1.4802475)
 
 ## Example: Dimerisation Model
 
