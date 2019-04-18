@@ -1,5 +1,5 @@
 # calculate the stoichiometry coefficients
-function stoich_coeff(species::Vector{SymPy.Sym}, reaction::DiffEqBiological.ReactionStruct, e_order::Vector{Int})
+function stoich_coeff(species::Vector{T}, reaction::DiffEqBiological.ReactionStruct, e_order::Vector{Int}) where T <: AlgebraSet
     coeff = 1
     for ind in eachindex(e_order)
         coeff *= DiffEqBiological.get_stoch_diff(reaction, Symbol(species[ind]))^e_order[ind]
@@ -13,7 +13,7 @@ function sign_coeff(a_ords::Vector{Int}, b_ords::Vector{Int})
 end
 
 # calculate the exponentiated mean terms
-function α_coeff(raw_means::Vector{SymPy.Sym}, n_orders::Vector{Int}, k_orders::Vector{Int})
+function α_coeff(raw_means::Vector{T}, n_orders::Vector{Int}, k_orders::Vector{Int}) where T <: AlgebraSet
     *(raw_means.^(n_orders .- k_orders)...)
 end
 
@@ -28,20 +28,56 @@ function inv_factorial_calc(orders::Vector{Int})
 end
 
 # to rewrite the mass rate calculation of DiffEqBiological, so that it can be differentiated later on.
-function mass_rate_MA(reaction::DiffEqBiological.ReactionStruct)
-    rate = SymPy.Sym(reaction.rate_org)
+function mass_rate_MA(reaction::DiffEqBiological.ReactionStruct; algebra::Algebra=sympy())
+    #println(SymPy.Sym(string(reaction.rate_org)))
+    rate = algebra.Sym(string(reaction.rate_org))
     if reaction.is_pure_mass_action
         for sub in reaction.substrates
              for i in 1:sub.stoichiometry
-                rate *= (SymPy.Sym(sub.reactant) + 1 - i) / i
+                rate *= (algebra.Sym(sub.reactant) + 1 - i) / i
             end
         end
     end
     rate
 end
 
-# function to generate ode expressions and to create the simulation function
-function get_ode(network::DiffEqBase.AbstractReactionNetwork, moments::MomentStruct, dμ::Vector{SymPy.Sym}, dM::Vector{SymPy.Sym})
+# convert raw moments to central moments
+function raw_to_cen(momentstruct::MomentStruct, n_order::Vector{Int})
+    eq = zero(eltype(momentstruct.species))
+    for ord in Iterators.product([0:n_max for n_max in n_order]...)
+        __n =collect(ord)
+        eq += binomial_coeff(n_order, __n) * α_coeff(momentstruct.species, n_order, __n) * momentstruct.cen_moments[__n]
+    end
+    eq
+end
+
+# convert central moments to raw moments (currently unused)
+function cen_to_raw(momentstruct::MomentStruct, n_order::Vector{Int})
+	eq = zero(eltype(momentstruct.species))
+	for ord in Iterators.product([0:n_max for n_max in n_order]...)
+		__n =collect(ord)
+		if sum(__n) == 1
+			eq += binomial_coeff(n_order, __n) * sign_coeff(n_order, __n) * α_coeff(momentstruct.species, n_order, __n) * momentstruct.species[findall(isone,__n)[1]]
+		else
+			eq += binomial_coeff(n_order, __n) * sign_coeff(n_order, __n) * α_coeff(momentstruct.species, n_order, __n) * momentstruct.raw_moments[__n]
+		end
+	end
+	eq
+end
+
+# compute taylor expansion
+function taylor_expand(expr::AlgebraSet, momentstruct::MomentStruct; algebra::Algebra=sympy())
+    eq = zero(algebra)
+    for orders in keys(momentstruct.cen_moments)
+        diff_args = reduce(append!, repeat([momentstruct.species[i]], orders[i]) for i in eachindex(orders))
+        factorial_coeff = inv_factorial_calc(orders)
+        eq += foldl(algebra.diff, (expr, diff_args...))*momentstruct.cen_moments[orders]*factorial_coeff
+    end
+    eq
+end
+
+# generate ode expressions and function from symbolic arrays
+function get_ode(network::DiffEqBase.AbstractReactionNetwork, moments::MomentStruct, dμ::Vector{T}, dM::Vector{T}) where T <: AlgebraSet
     filtered_cen_moments = filter(p->sum(p.first)>1, moments.cen_moments)
     central_dict = OrderedDict{Symbol, Int}(Symbol(pair[2])=>i+moments.num_species for (i,pair) in enumerate(filtered_cen_moments))
     ode_expr = Vector{Expr}(undef, moments.num_species + length(central_dict))

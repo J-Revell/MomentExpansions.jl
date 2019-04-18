@@ -1,6 +1,6 @@
 # MomentExpansions.jl
 
-(Health Warning: -> Early Development)
+(Note: -> Early Development)
 
 MomentExpansions.jl is an add-on package to DiffEqBiological.jl.
 
@@ -17,10 +17,10 @@ rn = @reaction_network dimer begin
     end k1 k2
 ```
 
-To create a moment expansion of order 2, we can call the following:
+To create a moment expansion of order 2, we can call the `approx` function, inputting the reaction network and desired truncation order:
 
 ```julia
-expansion = MomentExpansion(rn, 2)
+expansion = approx(rn, 2)
 ```
 
 This creates a `MomentExpansion` container, storing information about the moments, and their ODE equations.
